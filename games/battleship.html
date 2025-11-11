@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battleship - Cloud Computing PBL</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .game-info {
+            text-align: center;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .game-status {
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            min-height: 1.8rem;
+            color: var(--text-secondary);
+        }
+
+        .current-player {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .room-id {
+            background-color: var(--bg-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border: 1px solid var(--accent);
+        }
+
+        /* Main Layout */
+        .game-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .boards-section {
+            order: 1;
+        }
+
+        .instructions-section {
+            order: 2;
+        }
+
+        /* Boards Container */
+        .boards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .boards-container {
+                flex-direction: row;
+                justify-content: center;
+                align-items: flex-start;
+                gap: 3rem;
+            }
+        }
+
+        /* Individual Board */
+        .board-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .board-title {
+            color: var(--accent);
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Board Grid */
+        .board-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .coordinates-row {
+            display: flex;
+            gap: 4px;
+            margin-left: 30px;
+        }
+
+        .coordinate {
+            width: 32px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: bold;
+        }
+
+        .grid-content {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .row-coordinates {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .row-coordinate {
+            width: 24px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: bold;
+        }
+
+        .battle-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .grid-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        .grid-cell {
+            width: 32px;
+            height: 32px;
+            background-color: var(--bg-primary);
+            border: 2px solid var(--accent);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .grid-cell:hover {
+            transform: scale(1.05);
+        }
+
+        .grid-cell.empty {
+            background-color: var(--bg-secondary);
+        }
+
+        .grid-cell.hit {
+            background-color: #FF6B6B;
+            border-color: #FF6B6B;
+        }
+
+        .grid-cell.hit::after {
+            content: '✕';
+            color: var(--bg-primary);
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .grid-cell.miss {
+            background-color: #6CB4EE;
+            border-color: #6CB4EE;
+        }
+
+        .grid-cell.miss::after {
+            content: '•';
+            color: var(--bg-primary);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .grid-cell.ship {
+            background-color: #AAB4C2;
+            border-color: #AAB4C2;
+        }
+
+        .your-ships .grid-cell.ship {
+            background-color: #AAB4C2;
+            border-color: #AAB4C2;
+        }
+
+        .opponent-ocean .grid-cell.ship {
+            background-color: var(--bg-secondary);
+            border-color: var(--bg-secondary);
+        }
+
+        .grid-cell.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+        }
+
+        .grid-cell.disabled:hover {
+            transform: none;
+        }
+
+        /* Instructions */
+        .instructions {
+            background-color: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 2px solid var(--accent);
+            margin-top: 1rem;
+        }
+
+        .instructions h3 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .instructions p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .ship-legend {
+            display: flex;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .ship-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .ship-color {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            border: 1px solid var(--text-secondary);
+        }
+
+        .ship-ships { background-color: #AAB4C2; }
+        .ship-hit { background-color: #FF6B6B; }
+        .ship-miss { background-color: #6CB4EE; }
+
+        .winner-message {
+            color: var(--accent);
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .back-to-home {
+            color: var(--accent);
+            text-decoration: none;
+            margin-top: 2rem;
+            padding: 0.7rem 1.5rem;
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .back-to-home:hover {
+            color: var(--bg-primary);
+            background-color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .grid-cell {
+                width: 28px;
+                height: 28px;
+            }
+
+            .coordinate {
+                width: 28px;
+            }
+
+            .row-coordinate {
+                height: 28px;
+            }
+
+            .boards-container {
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="site-title">Battleship</h1>
+            <a href="../index.html" class="about-link">Back to Home</a>
+        </header>
+
+        <main class="game-container">
+            <div class="game-info">
+                <div class="game-status" id="gameStatus">Waiting for players to join...</div>
+                <div class="room-info">Room ID: <span class="room-id" id="roomId">Generating...</span></div>
+            </div>
+
+            <div class="game-content">
+                <div class="boards-section">
+                    <div class="boards-container">
+                        <!-- Your Ships -->
+                        <div class="board-wrapper">
+                            <div class="board-title" id="yourBoardTitle">Your Ships</div>
+                            <div class="board-grid">
+                                <div class="coordinates-row" id="yourCoordinatesRow"></div>
+                                <div class="grid-content">
+                                    <div class="row-coordinates" id="yourRowCoordinates"></div>
+                                    <div class="battle-grid your-ships" id="yourBoard"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opponent Ocean -->
+                        <div class="board-wrapper">
+                            <div class="board-title" id="opponentBoardTitle">Opponent's Ocean</div>
+                            <div class="board-grid">
+                                <div class="coordinates-row" id="opponentCoordinatesRow"></div>
+                                <div class="grid-content">
+                                    <div class="row-coordinates" id="opponentRowCoordinates"></div>
+                                    <div class="battle-grid opponent-ocean" id="opponentBoard"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ship-legend">
+                        <div class="ship-item">
+                            <div class="ship-color ship-ships"></div>
+                            <span>Your Ships</span>
+                        </div>
+                        <div class="ship-item">
+                            <div class="ship-color ship-hit"></div>
+                            <span>Hit</span>
+                        </div>
+                        <div class="ship-item">
+                            <div class="ship-color ship-miss"></div>
+                            <span>Miss</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="instructions-section">
+                    <div class="instructions">
+                        <h3>How to Play Battleship</h3>
+                        <p>• <strong>Your 5 ships are automatically placed</strong> on your board</p>
+                        <p>• <strong>Take turns firing</strong> at coordinates on opponent's board</p>
+                        <p>• <strong>Hit</strong> = Red X (you hit an enemy ship)</p>
+                        <p>• <strong>Miss</strong> = Blue dot (empty water)</p>
+                        <p>• <strong>Win</strong> by sinking all enemy ships first!</p>
+                        <p>• <strong>Ships:</strong> Carrier(5), Battleship(4), Cruiser(3), Submarine(3), Destroyer(2)</p>
+                    </div>
+                </div>
+            </div>
+
+            <a href="../index.html" class="back-to-home">← Back to Home</a>
+        </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="battleship.js"></script>
+</body>
+</html>
